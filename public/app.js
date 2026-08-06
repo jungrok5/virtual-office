@@ -249,34 +249,86 @@
       `블록 ${state.stats.blocked}건, 활동 멤버 ${state.stats.members}명. 멤버 이름으로 물으면 개인 현황을 알려드립니다.`;
   }
 
-  // ---- WebLLM: 브라우저(WebGPU)에서 직접 도는 온디바이스 LLM (옵트인) ----
-  let llmEngine = null;
+  // ---- 온디바이스 LLM (옵트인) --------------------------------------------
+  // 엔진 사다리: ① 크롬 내장 AI(Gemini Nano, 다운로드 없음) → ② WebLLM(WebGPU) → ③ 규칙 기반
+  let llmEngine = null;       // WebLLM 엔진
+  let builtinReady = false;   // 크롬 내장 Prompt API 사용 가능
   let llmLoading = false;
   const llmBtn = document.getElementById('llm-btn');
   const llmStatus = document.getElementById('llm-status');
+  const llmSelect = document.getElementById('llm-model');
+  llmSelect.value = localStorage.getItem('guild-llm-model') ?? 'auto';
+  if (!llmSelect.value) llmSelect.value = 'auto';
+  llmSelect.addEventListener('change', () => localStorage.setItem('guild-llm-model', llmSelect.value));
 
-  llmBtn.addEventListener('click', async () => {
-    if (llmEngine || llmLoading) return;
+  // 기기 맞춤 기본 모델 (navigator.deviceMemory는 크롬에서 최대 8로 캡)
+  function autoModel() {
+    const mem = navigator.deviceMemory ?? 4;
+    const mobile = matchMedia('(max-width: 700px)').matches;
+    if (mem >= 8) return 'Qwen3.5-4B-q4f16_1-MLC';        // 플래그십 폰(S26 울트라급)·PC
+    if (mem >= 4) return 'Qwen3.5-2B-q4f16_1-MLC';
+    return mobile ? 'Qwen3.5-0.8B-q4f16_1-MLC' : 'Qwen3.5-2B-q4f16_1-MLC';
+  }
+
+  async function tryBuiltin() {
+    if (!('LanguageModel' in self)) return false;
+    try {
+      const avail = await LanguageModel.availability();
+      if (avail === 'unavailable') return false;
+      llmStatus.textContent = avail === 'available'
+        ? '크롬 내장 AI 준비 중…'
+        : '크롬 내장 모델 다운로드 중 (브라우저가 관리, 이 탭 용량 아님)…';
+      const probe = await LanguageModel.create({
+        monitor(m) {
+          m.addEventListener('downloadprogress', (e) => {
+            llmStatus.textContent = `크롬 내장 모델 다운로드 ${Math.round((e.loaded ?? 0) * 100)}%`;
+          });
+        },
+      });
+      probe.destroy?.();
+      builtinReady = true;
+      llmStatus.textContent = '✅ 크롬 내장 AI(Gemini Nano) 준비됨 — 추가 다운로드 없이 기기에서 답변';
+      return true;
+    } catch {
+      builtinReady = false;
+      return false;
+    }
+  }
+
+  async function loadWebLlm(modelId) {
     if (!navigator.gpu) {
       llmStatus.textContent = '이 브라우저는 WebGPU를 지원하지 않습니다 — 규칙 기반으로 답합니다.';
-      return;
+      return false;
     }
-    llmLoading = true; llmBtn.disabled = true;
+    llmStatus.textContent = 'WebLLM 라이브러리 로딩…';
+    const webllm = await import('https://esm.run/@mlc-ai/web-llm');
+    llmEngine = await webllm.CreateMLCEngine(modelId, {
+      initProgressCallback: (p) =>
+        { llmStatus.textContent = `${modelId.split('-q4')[0]} 준비 중 ${Math.round((p.progress ?? 0) * 100)}% — 처음 한 번만 내려받습니다`; },
+    });
+    llmStatus.textContent = `✅ 온디바이스 LLM 준비됨 (${modelId.split('-q4')[0]}) — 답변이 기기 GPU에서 생성됩니다`;
+    return true;
+  }
+
+  llmBtn.addEventListener('click', async () => {
+    if (llmEngine || builtinReady || llmLoading) return;
+    llmLoading = true; llmBtn.disabled = true; llmSelect.disabled = true;
+    const choice = llmSelect.value;
     try {
-      llmStatus.textContent = 'WebLLM 라이브러리 로딩…';
-      const webllm = await import('https://esm.run/@mlc-ai/web-llm');
-      // 모바일은 0.5B, 데스크톱은 1.5B — 한국어가 되는 Qwen 계열 소형 모델
-      const model = matchMedia('(max-width: 700px)').matches
-        ? 'Qwen2.5-0.5B-Instruct-q4f16_1-MLC'
-        : 'Qwen2.5-1.5B-Instruct-q4f16_1-MLC';
-      llmEngine = await webllm.CreateMLCEngine(model, {
-        initProgressCallback: (p) =>
-          { llmStatus.textContent = `모델 준비 중 ${Math.round((p.progress ?? 0) * 100)}% — 처음 한 번만 내려받습니다`; },
-      });
-      llmStatus.textContent = `✅ 온디바이스 LLM 준비됨 (${model.split('-Instruct')[0]}) — 답변이 기기에서 생성됩니다`;
-      llmBtn.hidden = true;
+      // 내장 AI 우선 (auto/builtin 선택 시) — 다운로드 부담이 없다
+      if (choice === 'auto' || choice === 'builtin') {
+        if (await tryBuiltin()) { llmLoading = false; return; }
+        if (choice === 'builtin') {
+          llmStatus.textContent = '이 브라우저엔 내장 AI가 없습니다 (크롬 148+ 필요) — 아래에서 모델을 골라 다시 켜주세요.';
+          llmBtn.disabled = false; llmSelect.disabled = false; llmLoading = false;
+          return;
+        }
+      }
+      const modelId = choice.startsWith('Qwen') ? choice : autoModel();
+      if (!(await loadWebLlm(modelId))) { llmBtn.disabled = false; llmSelect.disabled = false; }
     } catch (err) {
-      llmEngine = null; llmBtn.disabled = false;
+      llmEngine = null;
+      llmBtn.disabled = false; llmSelect.disabled = false;
       llmStatus.textContent = `LLM 로드 실패 (${String(err.message ?? err).slice(0, 50)}) — 규칙 기반으로 답합니다.`;
     }
     llmLoading = false;
@@ -313,7 +365,27 @@
     return res.choices?.[0]?.message?.content?.trim();
   }
 
+  // 크롬 내장 AI: 질문마다 새 세션 (컨텍스트 누적·쿼터 문제 방지)
+  async function builtinOnce(q) {
+    const session = await LanguageModel.create();
+    try {
+      const answer = await session.prompt(
+        '너는 개발팀 현황판의 안내원이다. 아래 데이터만 근거로 질문에 한국어로 짧게 답하라. ' +
+        '데이터에 없는 내용은 "데이터에 없습니다"라고 답하라.\n\n' +
+        llmContext() + '\n\n질문: ' + q
+      );
+      return answer?.trim();
+    } finally {
+      session.destroy?.();
+    }
+  }
+
   async function askClient(q) {
+    if (builtinReady) {
+      try {
+        return (await builtinOnce(q)) || clientRules(q);
+      } catch { /* 내장 실패 → WebLLM/규칙으로 */ }
+    }
     if (!llmEngine) return clientRules(q);
     try {
       return (await llmOnce(q)) || clientRules(q);

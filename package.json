@@ -16,6 +16,7 @@
     "@anthropic-ai/sdk": "^0.115.0"
   },
   "devDependencies": {
+    "@mlc-ai/web-llm": "^0.2.84",
     "playwright": "^1.62.1"
   }
 }

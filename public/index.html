@@ -46,8 +46,16 @@
           <button type="submit">묻기</button>
         </form>
         <div class="llm-row" id="llm-row" hidden>
-          <button type="button" id="llm-btn">🧠 브라우저 LLM 켜기</button>
-          <span id="llm-status">기본은 규칙 기반 답변 · LLM은 이 기기의 GPU에서 직접 실행됩니다 (모델 0.3~1GB, 처음 한 번 다운로드)</span>
+          <select id="llm-model" aria-label="온디바이스 모델 선택">
+            <option value="auto">자동 (기기 맞춤)</option>
+            <option value="builtin">크롬 내장 AI (다운로드 없음)</option>
+            <option value="Qwen3.5-0.8B-q4f16_1-MLC">빠름 · Qwen3.5 0.8B (1.6GB)</option>
+            <option value="Qwen3.5-2B-q4f16_1-MLC">균형 · Qwen3.5 2B (2.2GB)</option>
+            <option value="Qwen3.5-4B-q4f16_1-MLC">고품질 · Qwen3.5 4B (3.9GB)</option>
+            <option value="Qwen3.5-9B-q4f16_1-MLC">최고 · Qwen3.5 9B (6.4GB·PC)</option>
+          </select>
+          <button type="button" id="llm-btn">🧠 켜기</button>
+          <span id="llm-status">기본은 규칙 기반 답변 · 켜면 크롬 내장 AI 또는 기기 GPU(WebGPU)에서 직접 실행됩니다</span>
         </div>
       </section>
     </aside>
