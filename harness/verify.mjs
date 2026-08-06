@@ -144,6 +144,12 @@ async function verifyStatic(browser) {
     const ans = await page.locator('#chat .msg.bot').last().textContent();
     check('정적: 클라이언트 Q&A 응답', Boolean(ans?.trim()), ans.slice(0, 50));
     await shot(page, 'static-mobile.png', '정적 스냅샷 모드 — 모바일(390px) 뷰, 서버 없이 state.json 렌더링');
+
+    // 동작 원리·설계 문서 페이지
+    await page.goto('http://localhost:4175/about.html');
+    check('정적: 설계 문서 페이지', (await page.title()).includes('동작 원리'));
+    check('정적: 문서→대시보드 링크', await page.locator('a.back[href="./"]').first().isVisible());
+    await shot(page, 'about-page.png', '동작 원리·설계 문서 페이지 (모바일 뷰)');
     await page.close();
   } finally {
     srv.close();

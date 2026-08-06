@@ -1,7 +1,7 @@
 // PWA 서비스워커 (정적 모드에서만 등록됨).
 // 앱 셸은 캐시 우선, 데이터(state.json/evidence)는 네트워크 우선 + 오프라인 폴백.
-const CACHE = 'guild-hq-v1';
-const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'manifest.json', 'icon.svg'];
+const CACHE = 'guild-hq-v2';
+const SHELL = ['./', 'index.html', 'about.html', 'style.css', 'app.js', 'manifest.json', 'icon.svg'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
