@@ -1,6 +1,6 @@
 {
   "branch": "claude-team-virtual-office-viz-rxd1z1",
-  "createdAt": "2026-08-06T01:18:04.303Z",
+  "createdAt": "2026-08-06T02:49:06.804Z",
   "screenshots": [
     {
       "file": "demo-office.png",
@@ -35,7 +35,7 @@
     {
       "name": "데모: Q&A 응답",
       "pass": true,
-      "detail": "최근 24시간 작업:\n· 하나 — 튜토리얼 이탈 구간 로그 추가\n· 지훈 — 상점 UI 겹침 버그 수정"
+      "detail": "오늘 완료된 작업:\n\n- **하나** — 튜토리얼 이탈 구간 로그 추가 (1시간 30분 전)\n- **지훈**"
     },
     {
       "name": "라이브: git 수집 성공",

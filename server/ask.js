@@ -1,21 +1,8 @@
 // 현황 Q&A: 질문을 받아 현재 스냅샷을 근거로 답한다.
-// ANTHROPIC_API_KEY가 있으면 Claude가 스냅샷(JSON)을 읽고 답하고, 없으면 규칙 기반으로 답한다.
+// LLM(API 키 또는 claude CLI 구독)이 있으면 Claude가 스냅샷(JSON)을 읽고 답하고,
+// 없으면 규칙 기반으로 답한다.
 
-let client = null;
-let sdkUnavailable = false;
-
-async function getClient() {
-  if (!process.env.ANTHROPIC_API_KEY || sdkUnavailable) return null;
-  if (client) return client;
-  try {
-    const { default: Anthropic } = await import('@anthropic-ai/sdk');
-    client = new Anthropic();
-    return client;
-  } catch {
-    sdkUnavailable = true;
-    return null;
-  }
-}
+import { complete, llmMode } from './llm.js';
 
 function ruleBased(question, state) {
   const q = question.trim();
@@ -23,7 +10,7 @@ function ruleBased(question, state) {
   if (hit) {
     const lines = [];
     lines.push(hit.working
-      ? `${hit.name}은(는) 최근 ${state.config?.workingWindowHours ?? 2}시간 내 푸시가 있어 작업 중으로 보입니다.`
+      ? `${hit.name}은(는) 최근 푸시가 있어 작업 중으로 보입니다.`
       : `${hit.name}의 마지막 푸시는 ${hit.lastPushAt ?? '기록 없음'}입니다.`);
     const mine = state.quests.filter((x) => x.owner === hit.name);
     mine.forEach((x) => lines.push(x.blocked
@@ -49,10 +36,6 @@ function ruleBased(question, state) {
 }
 
 export async function answerQuestion(question, state, config) {
-  const anthropic = await getClient();
-  if (!anthropic) return { answer: ruleBased(question, state), engine: 'rules' };
-
-  // 스냅샷에서 답변에 필요한 부분만 추려 컨텍스트로 전달
   const context = {
     repo: state.repo,
     generatedAt: state.generatedAt,
@@ -61,21 +44,14 @@ export async function answerQuestion(question, state, config) {
     did: state.did.slice(0, 20),
     stats: state.stats,
   };
-  try {
-    const res = await anthropic.messages.create({
-      model: config.summary.model,
-      max_tokens: 700,
-      system:
-        '너는 개발팀 현황판 "Guild HQ"의 안내원이다. 아래 JSON은 지금 이 순간의 팀 작업 스냅샷이다. ' +
-        '질문에 스냅샷 데이터만 근거로 한국어로 간결하게 답한다. 스냅샷에 없는 내용은 모른다고 답한다. ' +
-        '날짜는 상대 시간(예: 3시간 전)으로 풀어서 말한다.\n\n' + JSON.stringify(context),
-      messages: [{ role: 'user', content: question }],
-    });
-    if (res.stop_reason === 'refusal') return { answer: ruleBased(question, state), engine: 'rules' };
-    const text = res.content.find((b) => b.type === 'text')?.text?.trim();
-    return text ? { answer: text, engine: 'claude' } : { answer: ruleBased(question, state), engine: 'rules' };
-  } catch (err) {
-    console.error('[ask] Claude 응답 실패, 규칙 기반 폴백:', err.message);
-    return { answer: ruleBased(question, state), engine: 'rules' };
-  }
+  const text = await complete({
+    system:
+      '너는 개발팀 현황판 "Guild HQ"의 안내원이다. 아래 JSON은 지금 이 순간의 팀 작업 스냅샷이다. ' +
+      '질문에 스냅샷 데이터만 근거로 한국어로 간결하게 답한다. 스냅샷에 없는 내용은 모른다고 답한다. ' +
+      '날짜는 상대 시간(예: 3시간 전)으로 풀어서 말한다.\n\n' + JSON.stringify(context),
+    prompt: question,
+    model: config.summary.model,
+  });
+  if (text) return { answer: text, engine: await llmMode() };
+  return { answer: ruleBased(question, state), engine: 'rules' };
 }

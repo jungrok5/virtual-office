@@ -78,7 +78,8 @@ async function verifyDemo(browser) {
     // Q&A 왕복
     await page.fill('#ask-input', '오늘 뭐 됐어?');
     await page.click('#ask-form button');
-    await page.waitForFunction(() => document.querySelectorAll('#chat .msg.bot').length >= 2, null, { timeout: 10000 });
+    // LLM 백엔드(API/CLI)에 따라 응답이 수십 초 걸릴 수 있다
+    await page.waitForFunction(() => document.querySelectorAll('#chat .msg.bot').length >= 2, null, { timeout: 90000 });
     const answer = await page.locator('#chat .msg.bot').last().textContent();
     check('데모: Q&A 응답', Boolean(answer?.trim()), answer.slice(0, 60));
 

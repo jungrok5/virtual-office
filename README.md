@@ -25,11 +25,24 @@ npm run demo     # 데모: 가짜 팀 데이터가 시나리오대로 재생
 
 http://localhost:3000 접속. 설정은 `guild.config.json`.
 
+### LLM 백엔드: API 키 없이도, 구독으로도
+
+요약·Q&A는 세 가지 방식 중 자동으로 선택된다 (`server/llm.js`):
+
+1. **`ANTHROPIC_API_KEY`** — Anthropic API 직접 호출 (팀 서버 배포용)
+2. **claude CLI (구독)** — API 키가 없어도 [Claude Code CLI](https://claude.com/claude-code)가
+   설치·로그인되어 있으면 `claude -p` 헤드리스 호출로 동작한다.
+   **Claude Pro/Max 구독이면 추가 비용 없이** 본인 구독 사용량으로 요약·Q&A가 돌아간다.
+3. **규칙 기반** — 둘 다 없으면 LLM 없이 커밋 메시지 기반으로 답한다. 앱 전체가 그대로 동작한다.
+
+`GUILD_LLM=api|cli|rules`로 강제 지정 가능.
+
 ### 환경변수 (모두 선택)
 
 | 변수 | 효과 |
 |---|---|
-| `ANTHROPIC_API_KEY` | 멤버별 작업 한 줄 요약 + Q&A를 Claude가 수행 (없으면 규칙 기반 폴백) |
+| `ANTHROPIC_API_KEY` | LLM 백엔드를 API 모드로 (없으면 CLI → 규칙 기반 순으로 폴백) |
+| `GUILD_LLM` | LLM 백엔드 강제 지정: `api` / `cli` / `rules` |
 | `GITHUB_TOKEN` | GitHub API 보강 활성화 → PR 목록·CI 상태가 퀘스트에 반영 |
 | `DEMO=1` | 데모 모드 |
 | `PORT` | 포트 (기본 3000) |
