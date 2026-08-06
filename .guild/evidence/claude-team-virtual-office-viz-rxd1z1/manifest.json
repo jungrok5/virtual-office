@@ -1,6 +1,6 @@
 {
   "branch": "claude-team-virtual-office-viz-rxd1z1",
-  "createdAt": "2026-08-06T02:49:06.804Z",
+  "createdAt": "2026-08-06T03:37:08.660Z",
   "screenshots": [
     {
       "file": "demo-office.png",
@@ -35,7 +35,7 @@
     {
       "name": "데모: Q&A 응답",
       "pass": true,
-      "detail": "오늘 완료된 작업:\n\n- **하나** — 튜토리얼 이탈 구간 로그 추가 (1시간 30분 전)\n- **지훈**"
+      "detail": "오늘 진행된 항목입니다.\n\n**완료된 작업**\n- 하나: 튜토리얼 이탈 구간 로그 추가 (약 1시간 30분 "
     },
     {
       "name": "라이브: git 수집 성공",

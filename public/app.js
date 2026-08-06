@@ -107,7 +107,9 @@
   }
 
   const ticker = document.getElementById('ticker');
+  const TICK_TYPES = ['push', 'merge', 'ci_fail', 'ci_pass'];
   function tick(type, text, at) {
+    if (!TICK_TYPES.includes(type)) type = 'push';
     const d = at ? new Date(at) : new Date();
     const hh = String(d.getHours()).padStart(2, '0'), mm = String(d.getMinutes()).padStart(2, '0');
     const row = document.createElement('div');
