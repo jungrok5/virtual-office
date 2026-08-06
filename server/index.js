@@ -61,14 +61,16 @@ const evidenceBase = path.join(root, config.evidenceDir);
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
   '.webp': 'image/webp', '.svg': 'image/svg+xml',
   '.json': 'application/json; charset=utf-8',
 };
 
-// 심층 방어 보안 헤더. script-src를 self+esm.run+wasm으로 제한해 인젝션 시 임의 JS 실행을 막고,
-// object/base/frame을 차단한다. connect/img는 온디바이스 LLM 모델 다운로드를 위해 https 허용.
+// 심층 방어 보안 헤더. script-src를 self+wasm으로 제한해(WebLLM은 자체 호스팅) 인젝션 시
+// 임의 JS 실행을 막고, object/base/frame을 차단한다.
+// connect/img는 온디바이스 LLM 모델 가중치·WASM 커널 다운로드를 위해 https 허용(데이터).
 const SECURITY_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',
@@ -78,7 +80,7 @@ const SECURITY_HEADERS = {
     "base-uri 'self'",
     "object-src 'none'",
     "frame-ancestors 'none'",
-    "script-src 'self' https://esm.run 'wasm-unsafe-eval'",
+    "script-src 'self' 'wasm-unsafe-eval'",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "worker-src 'self' blob:",

@@ -109,7 +109,10 @@ GitHub Pages로 배포한다 → `https://<owner>.github.io/<repo>/`
 - **보안 헤더**: 모든 응답에 CSP(`script-src`를 self+esm.run으로 한정)·`X-Content-Type-Options`·
   `X-Frame-Options`·`Referrer-Policy`. HTML엔 meta CSP를 넣어 Pages 정적 배포에도 적용된다.
 - **토큰 위생**: `?token=` 진입 시 쿠키(HttpOnly·SameSite=Strict, HTTPS면 Secure)로 전환하고
-  주소창에서 토큰을 제거한다. 브라우저 LLM은 버전 고정된 esm.run에서만 로드된다.
+  주소창에서 토큰을 제거한다.
+- **공급망**: 브라우저 LLM 라이브러리(web-llm)를 <code>public/vendor/</code>에 자체 호스팅한다 —
+  외부 CDN에서 스크립트를 받지 않으므로 CSP <code>script-src</code>가 <code>'self'</code>다.
+  모델 가중치·WASM 커널만 외부에서 받으며(데이터, <code>connect-src</code>), 이는 인젝션 경로가 아니다.
 
 ## 다음 단계
 

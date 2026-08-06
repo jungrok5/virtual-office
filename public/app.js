@@ -309,8 +309,9 @@
       return false;
     }
     llmStatus.textContent = 'WebLLM 라이브러리 로딩…';
-    // 버전 고정 — latest 자동 pull을 막아 공급망 표면을 줄인다. CSP script-src도 esm.run으로 한정.
-    const webllm = await import('https://esm.run/@mlc-ai/web-llm@0.2.84');
+    // 자체 호스팅 번들 — 외부 CDN에서 스크립트를 받지 않는다(공급망 표면 제거).
+    // 모델 가중치·WASM 커널은 여전히 외부에서 받지만 그것은 데이터(connect-src)다.
+    const webllm = await import('./vendor/web-llm-0.2.84.mjs');
     llmEngine = await webllm.CreateMLCEngine(modelId, {
       initProgressCallback: (p) =>
         { llmStatus.textContent = `${modelId.split('-q4')[0]} 준비 중 ${Math.round((p.progress ?? 0) * 100)}% — 처음 한 번만 내려받습니다`; },

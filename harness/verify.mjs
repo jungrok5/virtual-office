@@ -110,6 +110,7 @@ async function verifyLive(browser) {
 // 정적 스냅샷 모드: build-static 산출물을 파일 서버로 띄워 검증한다 (Pages 배포와 동일 조건)
 const STATIC_MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8',
   '.png': 'image/png', '.svg': 'image/svg+xml',
 };
@@ -137,6 +138,14 @@ async function verifyStatic(browser) {
     const label = await page.locator('#repo-label').textContent();
     check('정적: 스냅샷 모드 감지', label.includes('정적 스냅샷'), label);
     check('정적: WebLLM 버튼 노출', await page.locator('#llm-row').isVisible());
+    // 자체 호스팅 web-llm 번들이 CSP(script-src 'self') 하에서 로드되고 export를 노출하는지
+    const vendorOk = await page.evaluate(async () => {
+      try {
+        const m = await import('./vendor/web-llm-0.2.84.mjs');
+        return typeof m.CreateMLCEngine === 'function' && Array.isArray(m.prebuiltAppConfig?.model_list);
+      } catch (e) { return 'ERR:' + (e.message || e); }
+    });
+    check('정적: 자체 호스팅 WebLLM 번들 로드', vendorOk === true, String(vendorOk));
     // 클라이언트 규칙 기반 Q&A (LLM 미로드 상태)
     await page.fill('#ask-input', '오늘 뭐 했어?');
     await page.click('#ask-form button');
