@@ -1,16 +1,21 @@
 {
-  "name": "virtual-office",
-  "version": "0.1.0",
-  "description": "팀 작업 맥락을 공유하는 픽셀 가상 오피스 — GitHub 푸시 기반 상태 시각화 + AI 작업 요약",
+  "name": "guild-hq",
+  "version": "0.2.0",
+  "description": "Guild HQ — 팀의 실제 깃 활동을 픽셀 오피스·퀘스트 보드로 보여주는 자동 스탠드업 대시보드 (+현황 Q&A, 하네스 evidence)",
   "type": "module",
   "scripts": {
     "start": "node server/index.js",
-    "demo": "DEMO=1 node server/index.js"
+    "demo": "DEMO=1 node server/index.js",
+    "verify": "node harness/verify.mjs",
+    "verify:demo": "node harness/verify.mjs --demo-only"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.116.0"
+    "@anthropic-ai/sdk": "^0.115.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.62.1"
   }
 }

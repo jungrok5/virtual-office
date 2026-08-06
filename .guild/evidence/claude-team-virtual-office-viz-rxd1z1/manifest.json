@@ -1,0 +1,46 @@
+{
+  "branch": "claude-team-virtual-office-viz-rxd1z1",
+  "createdAt": "2026-08-06T01:18:04.303Z",
+  "screenshots": [
+    {
+      "file": "demo-office.png",
+      "caption": "데모 모드 전체 화면 — 씬·퀘스트 보드·Q&A 응답"
+    },
+    {
+      "file": "live-office.png",
+      "caption": "라이브 — jungrok5/virtual-office 실데이터 (git 수집)"
+    }
+  ],
+  "checks": [
+    {
+      "name": "데모: 페이지 타이틀",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "데모: 퀘스트 카드 렌더링",
+      "pass": true,
+      "detail": "3장"
+    },
+    {
+      "name": "데모: 통계 칩 채워짐",
+      "pass": true,
+      "detail": "24h 커밋 8"
+    },
+    {
+      "name": "데모: 이벤트 티커 동작",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "데모: Q&A 응답",
+      "pass": true,
+      "detail": "최근 24시간 작업:\n· 하나 — 튜토리얼 이탈 구간 로그 추가\n· 지훈 — 상점 UI 겹침 버그 수정"
+    },
+    {
+      "name": "라이브: git 수집 성공",
+      "pass": true,
+      "detail": "멤버 1명, 퀘스트 0건"
+    }
+  ]
+}

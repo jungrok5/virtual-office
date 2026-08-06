@@ -1,0 +1,13 @@
+{
+  "repo": "jungrok5/virtual-office",
+  "port": 3000,
+  "pollIntervalSec": 60,
+  "demoPollIntervalSec": 5,
+  "activityWindowDays": 14,
+  "workingWindowHours": 2,
+  "evidenceDir": ".guild/evidence",
+  "summary": {
+    "model": "claude-opus-5",
+    "maxCommits": 10
+  }
+}

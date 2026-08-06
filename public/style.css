@@ -1,0 +1,131 @@
+/* Guild HQ — 게임 화면 컨셉의 다크 단일 테마.
+   팔레트: 밤 사무실(짙은 남보라) + 호박색 포인트, 상태색은 게임 UI 관례(민트/코랄/하늘). */
+:root {
+  --ink: #0f0c1a;
+  --floor: #1c1730;
+  --panel: #262040;
+  --line: #3a3160;
+  --text: #e8e2f4;
+  --dim: #9a8fc0;
+  --amber: #ffb454;
+  --mint: #6fe3a5;
+  --coral: #ff6b6b;
+  --sky: #7cc7ff;
+}
+* { box-sizing: border-box; margin: 0; }
+html, body { background: var(--ink); color: var(--text); }
+body {
+  font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+  line-height: 1.55;
+  padding: 20px clamp(12px, 3vw, 36px) 48px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; }
+
+header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 18px; margin-bottom: 6px; }
+h1 { font-size: 21px; letter-spacing: 3px; }
+h1 .hq { color: var(--amber); }
+.sub { color: var(--dim); font-size: 12.5px; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 16px; }
+.chip {
+  font-size: 11.5px; letter-spacing: 1px; padding: 4px 10px;
+  border: 1px solid var(--line); background: var(--floor); border-radius: 3px; color: var(--dim);
+}
+.chip b { color: var(--text); font-weight: 600; }
+.chip .dot { display: inline-block; width: 7px; height: 7px; margin-right: 6px; }
+.dot.amber { background: var(--amber); } .dot.sky { background: var(--sky); }
+.dot.mint { background: var(--mint); } .dot.coral { background: var(--coral); }
+
+.stage { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(280px, 1fr); gap: 16px; }
+@media (max-width: 900px) { .stage { grid-template-columns: 1fr; } }
+
+.scene {
+  position: relative; border: 1px solid var(--line); background: var(--floor);
+  border-radius: 4px; overflow: hidden; min-height: 360px;
+}
+.scene canvas { display: block; width: 100%; image-rendering: pixelated; }
+.toast {
+  position: absolute; transform: translate(-50%, -100%);
+  background: var(--ink); border: 1px solid var(--line); color: var(--text);
+  font-size: 11px; padding: 3px 8px; border-radius: 3px; white-space: nowrap;
+  opacity: 0; transition: opacity .25s, margin-top .25s; pointer-events: none; margin-top: 6px;
+}
+.toast.show { opacity: 1; margin-top: 0; }
+.toast .m { color: var(--amber); }
+
+.board { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.board h2, .gallery h2 {
+  font-size: 11.5px; letter-spacing: 2.5px; color: var(--dim); font-weight: 600;
+  margin: 0 0 8px; text-transform: uppercase;
+}
+.cards { display: flex; flex-direction: column; gap: 8px; }
+.card {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+  padding: 9px 11px; font-size: 12.5px; position: relative;
+}
+.card .title { font-weight: 600; overflow-wrap: anywhere; }
+.card .meta { color: var(--dim); font-size: 11px; margin-top: 3px; display: flex; gap: 10px; flex-wrap: wrap; }
+.card.blocked { border-color: color-mix(in srgb, var(--coral) 55%, var(--line)); }
+.stamp {
+  position: absolute; top: 7px; right: 9px; color: var(--coral);
+  font-size: 10px; letter-spacing: 2px; border: 1px solid var(--coral);
+  padding: 1px 6px; transform: rotate(4deg); border-radius: 2px;
+}
+.empty { color: var(--dim); font-size: 12px; }
+.done-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.done-list li { font-size: 12px; color: var(--dim); overflow-wrap: anywhere; }
+.done-list li::before { content: "✔ "; color: var(--mint); }
+.done-list li b { color: var(--text); font-weight: 600; }
+
+.chat {
+  display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto;
+  border: 1px solid var(--line); background: var(--floor); border-radius: 4px; padding: 8px;
+}
+.msg { font-size: 12px; padding: 5px 8px; border-radius: 3px; max-width: 92%; white-space: pre-line; overflow-wrap: anywhere; }
+.msg.bot { background: var(--panel); border: 1px solid var(--line); align-self: flex-start; }
+.msg.bot::before { content: "🛡️ "; }
+.msg.me { background: #2e2752; align-self: flex-end; }
+.msg em { color: var(--amber); font-style: normal; }
+.ask { display: flex; gap: 6px; margin-top: 6px; }
+.ask input {
+  flex: 1; min-width: 0; background: var(--floor); border: 1px solid var(--line); color: var(--text);
+  font: inherit; font-size: 12.5px; padding: 6px 9px; border-radius: 3px;
+}
+.ask input:focus { outline: 2px solid var(--amber); outline-offset: -1px; }
+.ask button {
+  background: var(--amber); color: var(--ink); border: 0; font: inherit; font-weight: 700;
+  font-size: 12px; letter-spacing: 1px; padding: 6px 14px; border-radius: 3px; cursor: pointer;
+}
+.ask button:disabled { opacity: .5; cursor: wait; }
+
+.gallery { margin-top: 16px; }
+.strip { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; }
+.shot {
+  flex: 0 0 auto; background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+  padding: 6px; cursor: pointer; text-align: left; font: inherit; color: inherit;
+}
+.shot:hover, .shot:focus-visible { border-color: var(--amber); outline: none; }
+.shot img { display: block; width: 220px; border-radius: 2px; }
+.shot .cap { font-size: 10.5px; color: var(--dim); margin-top: 5px; max-width: 220px; }
+.shot .cap b { color: var(--text); font-weight: 600; }
+
+.lightbox {
+  position: fixed; inset: 0; background: rgba(8, 6, 16, .88); z-index: 30;
+  display: none; align-items: center; justify-content: center; flex-direction: column; gap: 12px;
+  padding: 24px; cursor: zoom-out;
+}
+.lightbox.open { display: flex; }
+.lightbox img { max-width: min(92vw, 900px); max-height: 78vh; border: 1px solid var(--line); border-radius: 4px; }
+.lightbox .cap { font-size: 12.5px; color: var(--text); }
+.lightbox .cap span { color: var(--dim); }
+
+.ticker {
+  margin-top: 16px; border: 1px solid var(--line); background: var(--floor);
+  border-radius: 4px; padding: 8px 12px; font-size: 11.5px; color: var(--dim);
+  max-height: 110px; overflow: hidden;
+}
+.ticker div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ticker .t { color: var(--line); margin-right: 8px; }
+.ticker .ev-merge { color: var(--mint); } .ticker .ev-ci_fail { color: var(--coral); }
+.ticker .ev-push { color: var(--amber); } .ticker .ev-ci_pass { color: var(--mint); }
+
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }

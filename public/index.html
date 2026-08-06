@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guild HQ</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>GUILD <span class="hq">HQ</span></h1>
+    <span class="sub" id="repo-label">연결 중…</span>
+  </header>
+  <div class="chips">
+    <span class="chip"><span class="dot amber"></span>24h 커밋 <b id="c-commits">–</b></span>
+    <span class="chip"><span class="dot sky"></span>진행 중 <b id="c-quests">–</b></span>
+    <span class="chip"><span class="dot coral"></span>블록 <b id="c-blocked">–</b></span>
+    <span class="chip"><span class="dot mint"></span>멤버 <b id="c-members">–</b></span>
+  </div>
+
+  <div class="stage">
+    <div class="scene" id="scene">
+      <canvas id="cv" width="640" height="400" aria-label="픽셀 오피스: 멤버들의 실제 작업 활동"></canvas>
+    </div>
+
+    <aside class="board">
+      <section>
+        <h2>Quest Board — Doing</h2>
+        <div class="cards" id="doing"><div class="empty">수집 중…</div></div>
+      </section>
+      <section>
+        <h2>Did — 최근 24시간</h2>
+        <ul class="done-list" id="did"></ul>
+      </section>
+      <section>
+        <h2>길드 마스터에게 묻기</h2>
+        <div class="chat" id="chat">
+          <div class="msg bot">현황에 대해 물어보세요. 예: <em>"막힌 거 있어?"</em>, <em>"오늘 뭐 됐어?"</em></div>
+        </div>
+        <form class="ask" id="ask-form">
+          <input id="ask-input" type="text" placeholder="질문 입력…" autocomplete="off" aria-label="현황 질문 입력">
+          <button type="submit">묻기</button>
+        </form>
+      </section>
+    </aside>
+  </div>
+
+  <section class="gallery">
+    <h2>Evidence — 하네스가 찍은 화면들</h2>
+    <div class="strip" id="strip"><div class="empty">아직 커밋된 evidence가 없습니다. <code>npm run verify</code>로 생성됩니다.</div></div>
+  </section>
+
+  <div class="ticker" id="ticker" aria-live="polite"></div>
+</div>
+<div class="lightbox" id="lightbox"><img alt=""><div class="cap"></div></div>
+<script src="app.js"></script>
+</body>
+</html>
