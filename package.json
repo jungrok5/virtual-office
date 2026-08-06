@@ -1,0 +1,16 @@
+{
+  "name": "virtual-office",
+  "version": "0.1.0",
+  "description": "팀 작업 맥락을 공유하는 픽셀 가상 오피스 — GitHub 푸시 기반 상태 시각화 + AI 작업 요약",
+  "type": "module",
+  "scripts": {
+    "start": "node server/index.js",
+    "demo": "DEMO=1 node server/index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.116.0"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "repo": "jungrok5/virtual-office",
+  "branch": "main",
+  "pollIntervalSec": 60,
+  "port": 3000,
+  "thresholds": {
+    "awayHours": 2,
+    "offlineHours": 5
+  },
+  "summary": {
+    "model": "claude-opus-5",
+    "maxCommits": 10
+  },
+  "members": [
+    {
+      "id": "jungrok",
+      "name": "정록",
+      "role": "개발",
+      "gitAuthors": ["jungrok5", "jungrok5@gmail.com"]
+    }
+  ],
+  "demoMembers": [
+    { "id": "dev1", "name": "정록", "role": "개발", "gitAuthors": ["jungrok5"] },
+    { "id": "art1", "name": "김아트", "role": "아트", "gitAuthors": ["kimart"] },
+    { "id": "plan1", "name": "이기획", "role": "기획", "gitAuthors": ["leeplan"] },
+    { "id": "dev2", "name": "박서버", "role": "개발", "gitAuthors": ["parkserver"] }
+  ]
+}
