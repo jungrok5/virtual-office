@@ -2,6 +2,14 @@
 // 픽셀 씬(활동만 그린다 — 출퇴근 없음) · 퀘스트 보드 · Q&A · Evidence 갤러리를 렌더링한다.
 
 (() => {
+  // 인증 토큰이 URL(?token=)에 있으면 서버가 쿠키를 심어줬으므로, 히스토리·북마크·
+  // 로그에 토큰이 남지 않도록 주소창에서 즉시 제거한다 (이후 요청은 쿠키로 인증).
+  if (location.search.includes('token=')) {
+    const u = new URL(location.href);
+    u.searchParams.delete('token');
+    history.replaceState(null, '', u.pathname + u.search + u.hash);
+  }
+
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const cv = document.getElementById('cv'), cx = cv.getContext('2d');
   cx.imageSmoothingEnabled = false;
@@ -301,7 +309,8 @@
       return false;
     }
     llmStatus.textContent = 'WebLLM 라이브러리 로딩…';
-    const webllm = await import('https://esm.run/@mlc-ai/web-llm');
+    // 버전 고정 — latest 자동 pull을 막아 공급망 표면을 줄인다. CSP script-src도 esm.run으로 한정.
+    const webllm = await import('https://esm.run/@mlc-ai/web-llm@0.2.84');
     llmEngine = await webllm.CreateMLCEngine(modelId, {
       initProgressCallback: (p) =>
         { llmStatus.textContent = `${modelId.split('-q4')[0]} 준비 중 ${Math.round((p.progress ?? 0) * 100)}% — 처음 한 번만 내려받습니다`; },

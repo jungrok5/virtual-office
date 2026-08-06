@@ -3,7 +3,7 @@
 
 import http from 'node:http';
 import { createHash, timingSafeEqual } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
+import { readFile, realpath } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -67,8 +67,27 @@ const MIME = {
   '.json': 'application/json; charset=utf-8',
 };
 
+// 심층 방어 보안 헤더. script-src를 self+esm.run+wasm으로 제한해 인젝션 시 임의 JS 실행을 막고,
+// object/base/frame을 차단한다. connect/img는 온디바이스 LLM 모델 다운로드를 위해 https 허용.
+const SECURITY_HEADERS = {
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Content-Security-Policy': [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "frame-ancestors 'none'",
+    "script-src 'self' https://esm.run 'wasm-unsafe-eval'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "worker-src 'self' blob:",
+    "connect-src 'self' https: data: blob:",
+  ].join('; '),
+};
+
 function json(res, status, body, extraHeaders = {}) {
-  res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', ...extraHeaders });
+  res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', ...SECURITY_HEADERS, ...extraHeaders });
   res.end(JSON.stringify(body));
 }
 
@@ -94,6 +113,7 @@ async function serveFile(res, filePath, extraHeaders = {}) {
     const body = await readFile(filePath);
     res.writeHead(200, {
       'Content-Type': MIME[path.extname(filePath).toLowerCase()] ?? 'application/octet-stream',
+      ...SECURITY_HEADERS,
       ...extraHeaders,
     });
     res.end(body);
@@ -103,9 +123,24 @@ async function serveFile(res, filePath, extraHeaders = {}) {
 }
 
 // 경로 탈출 방지: base 밖으로 나가는 요청은 null (형제 디렉터리 프리픽스까지 차단)
+// 문자열 검사만으로는 심볼릭 링크 탈출을 못 막는다 — 링크가 가능한 경로엔 realpath 검사를 함께 쓴다.
 function safeJoin(base, rel) {
   const p = path.join(base, path.normalize(rel).replace(/^(\.\.[/\\])+/, ''));
   return p.startsWith(base + path.sep) ? p : null;
+}
+
+function safeDecode(s) {
+  try { return decodeURIComponent(s); } catch { return null; } // 잘못된 %인코딩
+}
+
+// 심링크까지 해석한 실제 경로가 base 안에 있는지 확인 (evidence 등 외부 기여 가능 경로용)
+async function realPathInside(base, target) {
+  try {
+    const [rb, rt] = await Promise.all([realpath(base), realpath(target)]);
+    return rt === rb || rt.startsWith(rb + path.sep) ? rt : null;
+  } catch {
+    return null; // 존재하지 않거나 접근 불가
+  }
 }
 
 // LLM 호출은 비싸다(구독/크레딧) — 동시 실행을 제한해 비용·리소스 소진을 막는다
@@ -124,13 +159,18 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/api/evidence') return json(res, 200, await listEvidence(evidenceBase));
 
   if (url.pathname === '/api/ask' && req.method === 'POST') {
+    // 카운터를 '수락 시점'에 즉시 증가시킨다 — 본문 수신 완료(end) 시점에 증가하면
+    // slow-body 요청 다수가 체크를 동시에 통과해 동시성 제한을 우회할 수 있다.
     if (askInFlight >= ASK_MAX_CONCURRENT) {
       return json(res, 429, { error: '질문 처리 중입니다. 잠시 후 다시 시도해 주세요.' });
     }
+    askInFlight++;
+    let done = false;
+    const release = () => { if (!done) { done = true; askInFlight--; } };
     let body = '';
     req.on('data', (chunk) => { body += chunk; if (body.length > 1e5) req.destroy(); });
+    req.on('close', release); // 클라이언트 중단(slow-body 후 끊기 등)에도 반드시 반환
     req.on('end', async () => {
-      askInFlight++;
       try {
         const { question } = JSON.parse(body || '{}');
         if (!question || !snapshot) return json(res, 400, { error: '질문이 비었거나 아직 수집 전입니다.' });
@@ -139,7 +179,7 @@ const server = http.createServer(async (req, res) => {
         console.error('[ask] 처리 실패:', err.message);
         json(res, 500, { error: '질문 처리에 실패했습니다.' });
       } finally {
-        askInFlight--;
+        release();
       }
     });
     return;
@@ -158,15 +198,20 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (url.pathname.startsWith('/evidence/')) {
-    const p = safeJoin(path.join(root, config.evidenceDir), url.pathname.slice('/evidence/'.length));
-    return p ? serveFile(res, p) : (res.writeHead(404), res.end());
+    const rel = safeDecode(url.pathname.slice('/evidence/'.length));
+    const p = rel === null ? null : safeJoin(evidenceBase, rel);
+    // 문자열 검사 통과 후 심링크 실경로까지 base 안인지 확인 (커밋된 심링크로 서버 파일 유출 차단)
+    const real = p ? await realPathInside(evidenceBase, p) : null;
+    return real ? serveFile(res, real) : (res.writeHead(404), res.end());
   }
 
-  const rel = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
-  const p = safeJoin(path.join(root, 'public'), rel);
-  // ?token=으로 첫 진입한 브라우저에는 쿠키를 심어 이후 fetch가 자동 인증되게 한다
+  const decoded = url.pathname === '/' ? 'index.html' : safeDecode(url.pathname.slice(1));
+  const p = decoded === null ? null : safeJoin(path.join(root, 'public'), decoded);
+  // ?token=으로 첫 진입한 브라우저에는 쿠키를 심어 이후 fetch가 자동 인증되게 한다.
+  // HTTPS(프록시 뒤 포함)면 Secure를 붙여 평문 전송을 막는다.
+  const isHttps = req.socket.encrypted || req.headers['x-forwarded-proto'] === 'https';
   const headers = AUTH_TOKEN && tokenEqual(url.searchParams.get('token'), AUTH_TOKEN)
-    ? { 'Set-Cookie': `guild_token=${AUTH_TOKEN}; HttpOnly; SameSite=Strict; Path=/` }
+    ? { 'Set-Cookie': `guild_token=${AUTH_TOKEN}; HttpOnly; SameSite=Strict; Path=/${isHttps ? '; Secure' : ''}` }
     : {};
   return p ? serveFile(res, p, headers) : (res.writeHead(404), res.end());
 });

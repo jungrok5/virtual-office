@@ -101,6 +101,15 @@ GitHub Pages로 배포한다 → `https://<owner>.github.io/<repo>/`
   왜곡할 가능성까지 없앨 수는 없다 — 현황판의 답은 참고용이며 원본은 항상 깃 히스토리다.
 - **Evidence는 커밋된다**: `.guild/evidence/` 스크린샷은 리포 공개 범위 그대로 공개된다.
   퍼블릭 리포에서 민감한 데이터가 보이는 배포 화면을 하네스로 찍지 않도록 주의.
+- **심링크 유출 차단**: evidence는 외부 기여자가 커밋할 수 있으므로, 목록·서빙·정적 복사
+  모두 심볼릭 링크를 제외하고 실경로가 base 안인지 확인한다 (커밋된 심링크로 서버 파일을
+  노출·게시하는 공격 차단).
+- **비용 DoS 방어**: `/api/ask` 동시성 카운터를 요청 수락 시점에 증가시켜 slow-body 우회를 막고,
+  본문 100KB·질문 500자로 제한한다.
+- **보안 헤더**: 모든 응답에 CSP(`script-src`를 self+esm.run으로 한정)·`X-Content-Type-Options`·
+  `X-Frame-Options`·`Referrer-Policy`. HTML엔 meta CSP를 넣어 Pages 정적 배포에도 적용된다.
+- **토큰 위생**: `?token=` 진입 시 쿠키(HttpOnly·SameSite=Strict, HTTPS면 Secure)로 전환하고
+  주소창에서 토큰을 제거한다. 브라우저 LLM은 버전 고정된 esm.run에서만 로드된다.
 
 ## 다음 단계
 
