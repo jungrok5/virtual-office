@@ -3,8 +3,9 @@
 
 const DAY = 24 * 36e5;
 
+// author는 수집 단계에서 authorAliases로 정규화되어 있다 — 이름 기준으로 묶는다
 function memberKey(c) {
-  return (c.email || c.author || '').toLowerCase();
+  return (c.author || c.email || '').toLowerCase();
 }
 
 export function buildState({ git, api, config, now = new Date(), prevShas = new Set() }) {

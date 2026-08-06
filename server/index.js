@@ -44,7 +44,7 @@ async function collect() {
   delete state.shas;
 
   for (const m of state.members) {
-    const own = git.commits.filter((c) => (c.email || c.author).toLowerCase() === m.id);
+    const own = git.commits.filter((c) => (c.author || c.email).toLowerCase() === m.id);
     m.summary = await summarizeMember(m, own, config);
   }
   snapshot = state;

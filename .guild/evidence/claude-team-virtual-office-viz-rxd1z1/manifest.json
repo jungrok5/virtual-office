@@ -1,6 +1,6 @@
 {
   "branch": "claude-team-virtual-office-viz-rxd1z1",
-  "createdAt": "2026-08-06T03:55:19.620Z",
+  "createdAt": "2026-08-06T05:16:00.983Z",
   "screenshots": [
     {
       "file": "demo-office.png",
@@ -39,7 +39,7 @@
     {
       "name": "데모: Q&A 응답",
       "pass": true,
-      "detail": "오늘(최근) 완료된 작업입니다.\n\n- **하나**: 튜토리얼 이탈 구간 로그 추가 (약 1시간 30분 전)\n"
+      "detail": "오늘 완료된 작업입니다.\n\n- **하나**: 튜토리얼 이탈 구간 로그 추가 (약 1시간 30분 전)\n- **"
     },
     {
       "name": "라이브: git 수집 성공",
@@ -59,7 +59,7 @@
     {
       "name": "정적: 클라이언트 Q&A 응답",
       "pass": true,
-      "detail": "최근 24시간 작업:\n· Claude — 보안 강화: 인증·바인딩·LLM 인젝션 방어·동시"
+      "detail": "최근 24시간 작업:\n· jungrok5 — chore: Pages 활성화 후 배포 재트리"
     }
   ]
 }

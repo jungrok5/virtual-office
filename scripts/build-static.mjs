@@ -24,7 +24,7 @@ delete state.shas;
 state.staticBuild = true;
 
 for (const m of state.members) {
-  const own = git.commits.filter((c) => (c.email || c.author).toLowerCase() === m.id);
+  const own = git.commits.filter((c) => (c.author || c.email).toLowerCase() === m.id);
   m.summary = await summarizeMember(m, own, config); // LLM 없으면 규칙 기반
 }
 

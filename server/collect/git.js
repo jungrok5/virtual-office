@@ -20,7 +20,17 @@ function parseCommits(raw, branch) {
   });
 }
 
-export async function collectFromGit(repoDir, { activityWindowDays = 14 } = {}) {
+// 커밋 author를 표시용 이름으로 정규화 — 에이전트 커밋(noreply@anthropic.com 등)을
+// 계정 주인 이름으로 귀속시키는 authorAliases(config) 적용
+function applyAliases(commits, aliases) {
+  if (!aliases) return commits;
+  return commits.map((c) => ({
+    ...c,
+    author: aliases[c.email?.toLowerCase()] ?? aliases[c.author] ?? c.author,
+  }));
+}
+
+export async function collectFromGit(repoDir, { activityWindowDays = 14, authorAliases } = {}) {
   try {
     await git(repoDir, ['fetch', 'origin', '--prune', '--quiet']);
   } catch (err) {
@@ -68,10 +78,10 @@ export async function collectFromGit(repoDir, { activityWindowDays = 14 } = {}) 
     const raw = await git(repoDir, [
       'log', `origin/${defaultBranch}..origin/${b.name}`, '-n', '50', format,
     ]).catch(() => '');
-    const ahead = parseCommits(raw, b.name);
+    const ahead = applyAliases(parseCommits(raw, b.name), authorAliases);
     commits.push(...ahead);
     featureBranches.push({ ...b, aheadCount: ahead.length, commits: ahead });
   }
 
-  return { defaultBranch, branches, featureBranches, commits };
+  return { defaultBranch, branches, featureBranches, commits: applyAliases(commits, authorAliases) };
 }

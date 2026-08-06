@@ -6,6 +6,11 @@
   "activityWindowDays": 14,
   "workingWindowHours": 2,
   "evidenceDir": ".guild/evidence",
+  "authorAliases": {
+    "noreply@anthropic.com": "jungrok5",
+    "jungrok5@gmail.com": "jungrok5",
+    "Claude": "jungrok5"
+  },
   "summary": {
     "model": "claude-opus-5",
     "maxCommits": 10
