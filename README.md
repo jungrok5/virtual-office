@@ -72,6 +72,20 @@ npm run verify:demo   # 데모만
 **이 폴더는 커밋 대상이다** — 리뷰어와 대시보드(Evidence 갤러리)가 같은 이미지를 본다.
 에이전트가 개발할 때도 이 루프를 쓴다: 구현 → `npm run verify` → 스크린샷 확인 → 커밋.
 
+## 정적 스냅샷 모드 (서버 없이 GitHub Pages)
+
+`.github/workflows/pages.yml`이 푸시·매시간마다 수집을 돌려 `state.json` + evidence를
+GitHub Pages로 배포한다 → `https://<owner>.github.io/<repo>/`
+
+- 프론트는 서버(`/api/state`)가 없으면 자동으로 `state.json`을 읽는 정적 모드로 전환된다.
+- **Q&A도 서버 없이 동작한다**: 기본은 규칙 기반, "🧠 브라우저 LLM 켜기"를 누르면
+  WebLLM이 Qwen 소형 모델(모바일 0.5B / 데스크톱 1.5B)을 내려받아
+  **이 기기의 GPU(WebGPU)에서 직접** 답변을 생성한다. API도 구독도 필요 없다.
+  (WebGPU 미지원 브라우저는 규칙 기반 유지. 크롬/엣지 데스크톱, 안드로이드 크롬 지원)
+- **PWA**: 모바일 브라우저에서 "홈 화면에 추가"하면 앱처럼 설치된다. 오프라인엔 마지막 스냅샷 표시.
+- 로컬 미리보기: `node scripts/build-static.mjs` 후 `dist/`를 아무 정적 서버로 서빙.
+- 주의: Pages는 인증이 없다 — 리포가 퍼블릭이면 현황판도 퍼블릭이다.
+
 ## 보안 메모
 
 - **바인딩**: 기본으로 `127.0.0.1`에만 열린다. 팀에 개방하려면 `HOST=0.0.0.0`을 명시하고,

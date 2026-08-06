@@ -3,8 +3,8 @@
 
 import http from 'node:http';
 import { createHash, timingSafeEqual } from 'node:crypto';
-import { readFile, readdir, stat } from 'node:fs/promises';
-import { existsSync, readFileSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -14,6 +14,7 @@ import { buildState } from './state.js';
 import { summarizeMember } from './summarize.js';
 import { answerQuestion } from './ask.js';
 import { buildDemoState } from './demo.js';
+import { listEvidence } from './evidence.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, '..');
@@ -55,34 +56,7 @@ function broadcast() {
   for (const res of sseClients) res.write(payload);
 }
 
-// ---- evidence: .guild/evidence/<branch>/ 의 manifest + 이미지 목록 ------
-async function listEvidence() {
-  const base = path.join(root, config.evidenceDir);
-  if (!existsSync(base)) return [];
-  const out = [];
-  for (const branch of await readdir(base)) {
-    const dir = path.join(base, branch);
-    if (!(await stat(dir)).isDirectory()) continue;
-    let manifest = null;
-    try {
-      manifest = JSON.parse(await readFile(path.join(dir, 'manifest.json'), 'utf8'));
-    } catch { /* manifest 없이 이미지만 있어도 노출 */ }
-    const files = (await readdir(dir)).filter((f) => /\.(png|jpg|jpeg|webp|svg)$/i.test(f));
-    for (const file of files) {
-      const meta = manifest?.screenshots?.find((s) => s.file === file);
-      out.push({
-        branch,
-        file,
-        url: `/evidence/${branch}/${file}`,
-        caption: meta?.caption ?? file,
-        createdAt: manifest?.createdAt ?? null,
-        checks: manifest?.checks ?? null,
-      });
-    }
-  }
-  out.sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
-  return out;
-}
+const evidenceBase = path.join(root, config.evidenceDir);
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -147,7 +121,7 @@ const server = http.createServer(async (req, res) => {
 
   if (url.pathname === '/api/state') return json(res, 200, snapshot ?? { loading: true });
 
-  if (url.pathname === '/api/evidence') return json(res, 200, await listEvidence());
+  if (url.pathname === '/api/evidence') return json(res, 200, await listEvidence(evidenceBase));
 
   if (url.pathname === '/api/ask' && req.method === 'POST') {
     if (askInFlight >= ASK_MAX_CONCURRENT) {

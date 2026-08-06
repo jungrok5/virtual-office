@@ -1,0 +1,46 @@
+# 정적 스냅샷 배포: 주기적으로 수집을 돌려 state.json + evidence를 GitHub Pages에 올린다.
+# 서버 없이 https://<owner>.github.io/<repo>/ 에서 대시보드를 본다 (Q&A는 브라우저 LLM/규칙 기반).
+name: pages
+
+on:
+  push:
+    branches: [claude/team-virtual-office-viz-rxd1z1]
+  schedule:
+    - cron: '0 * * * *' # 매시 갱신
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build static snapshot
+        run: node scripts/build-static.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GUILD_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: deployment
+        uses: actions/deploy-pages@v4

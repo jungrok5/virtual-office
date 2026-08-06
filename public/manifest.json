@@ -1,0 +1,12 @@
+{
+  "name": "Guild HQ",
+  "short_name": "GuildHQ",
+  "description": "팀의 실제 깃 활동을 픽셀 오피스·퀘스트 보드로 보는 자동 스탠드업",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0f0c1a",
+  "theme_color": "#0f0c1a",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

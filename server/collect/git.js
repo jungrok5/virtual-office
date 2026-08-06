@@ -27,12 +27,15 @@ export async function collectFromGit(repoDir, { activityWindowDays = 14 } = {}) 
     console.error('[git] fetch 실패 (로컬 캐시로 진행):', err.message.split('\n')[0]);
   }
 
-  let defaultBranch;
-  try {
-    const head = await git(repoDir, ['symbolic-ref', 'refs/remotes/origin/HEAD']);
-    defaultBranch = head.replace('refs/remotes/origin/', '');
-  } catch {
-    defaultBranch = null; // 아래에서 가장 최근 브랜치로 대체
+  // CI(Actions)에서는 GUILD_DEFAULT_BRANCH로 명시 주입 — symbolic-ref가 없는 얕은 클론 대비
+  let defaultBranch = process.env.GUILD_DEFAULT_BRANCH || null;
+  if (!defaultBranch) {
+    try {
+      const head = await git(repoDir, ['symbolic-ref', 'refs/remotes/origin/HEAD']);
+      defaultBranch = head.replace('refs/remotes/origin/', '');
+    } catch {
+      defaultBranch = null; // 아래에서 가장 최근 브랜치로 대체
+    }
   }
 
   const refsRaw = await git(repoDir, [

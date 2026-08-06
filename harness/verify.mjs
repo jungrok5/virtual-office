@@ -4,7 +4,8 @@
 //       node harness/verify.mjs --demo-only
 
 import { spawn, execFileSync } from 'node:child_process';
-import { mkdir, writeFile, rm } from 'node:fs/promises';
+import { mkdir, writeFile, rm, readFile } from 'node:fs/promises';
+import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
@@ -106,6 +107,49 @@ async function verifyLive(browser) {
   }
 }
 
+// 정적 스냅샷 모드: build-static 산출물을 파일 서버로 띄워 검증한다 (Pages 배포와 동일 조건)
+const STATIC_MIME = {
+  '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8',
+  '.png': 'image/png', '.svg': 'image/svg+xml',
+};
+function serveDir(dir, port) {
+  const srv = http.createServer(async (req, res) => {
+    const rel = req.url === '/' ? 'index.html' : decodeURIComponent(req.url.split('?')[0].slice(1));
+    try {
+      const body = await readFile(path.join(dir, rel));
+      res.writeHead(200, { 'Content-Type': STATIC_MIME[path.extname(rel)] ?? 'application/octet-stream' });
+      res.end(body);
+    } catch {
+      res.writeHead(404); res.end();
+    }
+  });
+  return new Promise((resolve) => srv.listen(port, () => resolve(srv)));
+}
+
+async function verifyStatic(browser) {
+  execFileSync('node', ['scripts/build-static.mjs'], { cwd: root, stdio: 'inherit' });
+  const srv = await serveDir(path.join(root, 'dist'), 4175);
+  try {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } }); // 모바일 뷰포트
+    await page.goto('http://localhost:4175/');
+    await page.waitForFunction(() => document.getElementById('c-members').textContent !== '–', null, { timeout: 15000 });
+    const label = await page.locator('#repo-label').textContent();
+    check('정적: 스냅샷 모드 감지', label.includes('정적 스냅샷'), label);
+    check('정적: WebLLM 버튼 노출', await page.locator('#llm-row').isVisible());
+    // 클라이언트 규칙 기반 Q&A (LLM 미로드 상태)
+    await page.fill('#ask-input', '오늘 뭐 했어?');
+    await page.click('#ask-form button');
+    await page.waitForFunction(() => document.querySelectorAll('#chat .msg.bot').length >= 2, null, { timeout: 10000 });
+    const ans = await page.locator('#chat .msg.bot').last().textContent();
+    check('정적: 클라이언트 Q&A 응답', Boolean(ans?.trim()), ans.slice(0, 50));
+    await shot(page, 'static-mobile.png', '정적 스냅샷 모드 — 모바일(390px) 뷰, 서버 없이 state.json 렌더링');
+    await page.close();
+  } finally {
+    srv.close();
+  }
+}
+
 const demoOnly = process.argv.includes('--demo-only');
 await rm(outDir, { recursive: true, force: true });
 await mkdir(outDir, { recursive: true });
@@ -113,7 +157,10 @@ await mkdir(outDir, { recursive: true });
 const browser = await launchBrowser();
 try {
   await verifyDemo(browser);
-  if (!demoOnly) await verifyLive(browser);
+  if (!demoOnly) {
+    await verifyLive(browser);
+    await verifyStatic(browser);
+  }
 } finally {
   await browser.close();
 }
